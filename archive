@@ -1,0 +1,25 @@
+import numpy as np
+import os
+import pandas as pd
+
+
+
+proj_dir = '/mnt/aertslab/USERS/Zezhong/others/pca'
+
+pca_bix = 'PCa_biopsy.csv'
+benign_bix = 'benign_biopsy.csv'
+benign_nobix = 'benign_no_biopsy.csv'
+
+fn1 = 'pca_bix.csv'
+fn2 = 'benign_bix.csv'
+fn3 = 'benign_nobix.csv'
+
+datas = [pca_bix, benign_bix, benign_nobix]
+fns = [fn1, fn2, fn3]
+
+for data, fn in zip(datas, fns):
+    df = pd.read_csv(os.path.join(proj_dir, data))
+    df = df.groupby(['Sub_ID'], dropna=True).mean()
+    print(df.shape[0])
+    df.to_csv(os.path.join(proj_dir, fn))
+    print('complete:', fn)
