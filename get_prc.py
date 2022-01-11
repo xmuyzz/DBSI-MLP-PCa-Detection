@@ -17,12 +17,12 @@ def get_prc(proj_dir, output_dir, data_type):
         fn2 = 'exvivo_pat_pred.csv'
 
     # voxel level data
-    df1 = pd.read_csv(os.path.join(pro_data_dir, 'test_voxel_pred.csv'))
+    df1 = pd.read_csv(os.path.join(pro_data_dir, fn1))
     y_test_vox = df1['y_test'].to_numpy()
     y_pred_vox = df1['y_pred'].to_numpy()
     
     # patient level data
-    df2 = pd.read_csv(os.path.join(pro_data_dir, 'test_pat_pred.csv'))
+    df2 = pd.read_csv(os.path.join(pro_data_dir, fn2))
     y_test_pat = df2['y_test'].to_numpy()
     y_pred_pat = df2['y_pred'].to_numpy()
 

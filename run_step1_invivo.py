@@ -1,6 +1,6 @@
 from tensorflow.keras.optimizers import RMSprop, Adam
 from tensorflow.keras.layers import ELU, LeakyReLU
-from get_data_invivo import get_data_invivo
+from get_data_invivo_kFoldVal import get_data_invivo_kFoldVal
 from get_model import get_model
 from train_invivo import train_invivo
 from get_roc import get_roc
@@ -10,8 +10,8 @@ from get_prc import get_prc
 
 if __name__ == '__main__':
 
-    proj_dir = '/home/xmuyzz/Harvard_AIM/others/pca'
-    output_dir  = '/mnt/aertslab/USERS/Zezhong/others/pca/output'
+    proj_dir = r'C:\Users\atwu\Desktop\PCa_voxel_data'
+    output_dir  = r'C:\Users\atwu\Desktop\PCa_results'
 
     benign_nobix = 'benign_no_biopsy.csv'
     benign_bix = 'benign_biopsy.csv'
@@ -42,17 +42,19 @@ if __name__ == '__main__':
     activation = ELU(alpha=ELU_alpha)
     bootstrap = 100
     data_type = 'invivo'
+    numFolds = 5
 
 
     x_train, y_train, x_val, y_val, x_test, y_test, \
-    df_val, df_test = get_data_invivo(
+    df_val, df_test = get_data_invivo_kFoldVal(
         proj_dir=proj_dir,
         benign_bix=benign_bix,
         benign_nobix=benign_nobix,
         pca_bix=pca_bix,
         exclude_patient=exclude_patient,
         exclude_list=exclude_list,
-        x_input=x_input
+        x_input=x_input,
+        folds=numFolds
         )
 
     model = get_model(
@@ -89,6 +91,7 @@ if __name__ == '__main__':
 
     prc_stat = get_prc(
         proj_dir=proj_dir,
-        output_dir=output_dir
+        output_dir=output_dir,
+        data_type = data_type
         )
 
