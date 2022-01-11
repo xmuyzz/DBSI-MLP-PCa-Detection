@@ -79,7 +79,8 @@ if __name__ == '__main__':
         batch_size=batch_size,
         epoch=epoch,
         loss=loss,
-        optimizer=optimizer
+        optimizer=optimizer,
+        folds=numFolds
         )
 
     roc_stat = get_roc(

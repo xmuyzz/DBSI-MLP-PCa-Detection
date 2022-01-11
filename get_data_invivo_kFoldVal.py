@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
+folds = 5
+
 def get_data_invivo_kFoldVal(proj_dir, benign_bix, benign_nobix, pca_bix, exclude_patient,
                     exclude_list, x_input, folds):
 
@@ -71,13 +73,22 @@ def get_data_invivo_kFoldVal(proj_dir, benign_bix, benign_nobix, pca_bix, exclud
     df_test = pd.concat([df2, df3_test])
 
     ## split PCa cohorts to train and val
-    print(df_trainval.shape)
     train_inds, val_inds = next(GroupShuffleSplit(
         test_size=0.2,
         n_splits=2,
         random_state=7).split(df_trainval, groups=df_trainval['Sub_ID']))
     df_train = df_trainval.iloc[train_inds]
     df_val = df_trainval.iloc[val_inds]
+    # print(df_trainval.shape)
+    # trainValIdxs = df_trainval.shape[0]
+    # trainValIdxs = random.shuffle(trainValIdxs)
+    # allTrainValParts = [None] * folds
+    # trainIdxs  = [None] * folds
+    # for i in range(folds):
+    #     allTrainValParts[i] = trainValIdxs[trainValIdxs % folds == i]
+    #     trainIdxs[i] = trainValIdxs[trainValIdxs % folds != i]
+
+    # valIdxs = allTrainValParts
 
     # get data and labels
     x_train = df_train.iloc[:, x_input]

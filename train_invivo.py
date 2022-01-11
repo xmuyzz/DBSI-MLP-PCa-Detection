@@ -28,21 +28,26 @@ from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.utils import resample
 from sklearn.metrics import roc_auc_score
-
-
-
+from sklearn.model_selection import cross_val_score
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
 
 def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
-                 df_val, df_test, proj_dir, batch_size, epoch, loss, optimizer):
+                 df_val, df_test, proj_dir, batch_size, epoch, loss, optimizer, folds):
 
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
-
-    model.compile(
-        loss=loss,
-        optimizer=optimizer,
-        metrics=['accuracy']
-        )
-    model.summary()
+    def buildModel():
+        model.compile(
+            loss=loss,
+            optimizer=optimizer,
+            metrics=['accuracy']
+            )
+        return model
+    
+    estimator = KerasClassifier(build_fn=buildModel, epochs=epoch, batch_size=batch_size, verbose=1)
+    scores = cross_val_score(estimator, x_train, y_train, cv=folds, scoring='accuracy')
+    print('cross fold validation scores:')
+    print(scores)
+    print("%.2f (%.2f) MSE" % (scores.mean(), scores.std()))
 
     history = model.fit(
         x=x_train,
@@ -61,6 +66,7 @@ def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
         validation_steps=None,
         )
 
+    
     y_pred = model.predict(x_test)
     y_pred_class = np.argmax(y_pred, axis=1)
     score = model.evaluate(x_test, y_test, verbose=0)
