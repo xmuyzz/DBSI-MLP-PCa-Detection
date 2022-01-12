@@ -16,7 +16,7 @@ if __name__ == '__main__':
     benign_nobix = 'benign_no_biopsy.csv'
     benign_bix = 'benign_biopsy.csv'
     pca_bix = 'pca_biopsy.csv'
-    exclude_patient = False
+    exclude_patient = True
     exclude_list = ['001_ZHOU_CHAO_GANG', '002_ZHU_XIN_GEN', '007_SHEN_QIU_YU',
                     '016_LIU_FENG_MEI', '028_XUE_LUO_PING']
     alpha = 0.3
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
 
     x_train, y_train, x_val, y_val, x_test, y_test, \
-    df_val, df_test = get_data_invivo_kFoldVal(
+    df_val, df_test, trainIDs, valIDs, testIDs = get_data_invivo_kFoldVal(
         proj_dir=proj_dir,
         benign_bix=benign_bix,
         benign_nobix=benign_nobix,
@@ -73,6 +73,9 @@ if __name__ == '__main__':
         y_val=y_val,
         x_test=x_test,
         y_test=y_test,
+        trainIDs=trainIDs,
+        valIDs=valIDs,
+        testIDs=testIDs,
         df_val=df_val,
         df_test=df_test,
         proj_dir=proj_dir,

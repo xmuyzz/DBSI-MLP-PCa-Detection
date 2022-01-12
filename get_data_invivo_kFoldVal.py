@@ -80,7 +80,7 @@ def get_data_invivo_kFoldVal(proj_dir, benign_bix, benign_nobix, pca_bix, exclud
     df_train = df_trainval.iloc[train_inds]
     df_val = df_trainval.iloc[val_inds]
     # print(df_trainval.shape)
-    # trainValIdxs = df_trainval.shape[0]
+    # trainValIdxs = np.range(df_trainval.shape[0])
     # trainValIdxs = random.shuffle(trainValIdxs)
     # allTrainValParts = [None] * folds
     # trainIdxs  = [None] * folds
@@ -98,6 +98,10 @@ def get_data_invivo_kFoldVal(proj_dir, benign_bix, benign_nobix, pca_bix, exclud
     x_test = df_test.iloc[:, x_input]
     y_test = df_test['ROI_Class'].astype('int')
 
+    trainIDs = df_train.loc[:, 'Sub_ID'].to_numpy()
+    valIDs = df_val.loc[:, 'Sub_ID'].to_numpy()
+    testIDs = df_test.loc[:, 'Sub_ID'].to_numpy()
+
     # scale data#
     x_train = MinMaxScaler().fit_transform(x_train)
     x_val = MinMaxScaler().fit_transform(x_val)
@@ -111,4 +115,4 @@ def get_data_invivo_kFoldVal(proj_dir, benign_bix, benign_nobix, pca_bix, exclud
     print('val size:', len(y_val))
     print('test size:', len(y_test))
 
-    return x_train, y_train, x_val, y_val, x_test, y_test, df_val, df_test
+    return x_train, y_train, x_val, y_val, x_test, y_test, df_val, df_test, trainIDs, valIDs, testIDs

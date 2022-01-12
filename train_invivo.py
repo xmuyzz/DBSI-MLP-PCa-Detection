@@ -30,9 +30,11 @@ from sklearn.utils import resample
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import cross_val_score
 from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
+import random, copy
 
 def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
-                 df_val, df_test, proj_dir, batch_size, epoch, loss, optimizer, folds):
+                 trainIDs, valIDs, testIDs, df_val, df_test, proj_dir, 
+                 batch_size, epoch, loss, optimizer, folds):
 
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     def buildModel():
@@ -44,7 +46,43 @@ def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
         return model
     
     estimator = KerasClassifier(build_fn=buildModel, epochs=epoch, batch_size=batch_size, verbose=1)
-    scores = cross_val_score(estimator, x_train, y_train, cv=folds, scoring='accuracy')
+
+    crossValX = np.concatenate((x_train, x_test))
+    crossValY = np.concatenate((y_train, y_test))
+
+    print(type(trainIDs))
+    print(type(valIDs))
+
+    dataPatientIDs = np.array(list(trainIDs)+list(valIDs))
+    allDataIdxs = range(dataPatientIDs.size)
+
+    patientIDs = np.unique(dataPatientIDs)
+    print('number of patients:')
+    print(len(patientIDs))
+    trainValIdxs = np.array(list(range(len(patientIDs))))
+    shuffledIdxs = copy.deepcopy(trainValIdxs)
+    random.shuffle(shuffledIdxs)
+    # print(trainValIdxs)
+    # print(shuffledIdxs)
+    allTrainValParts = [None] * folds
+    trainIdxs  = [None] * folds
+
+    for i in range(folds):
+        valIDs = patientIDs[shuffledIdxs[trainValIdxs % folds == i]]
+        allTrainValParts[i] = allDataIdxs[np.isin(dataPatientIDs, valIDs)]
+        trainIDs = patientIDs[shuffledIdxs[trainValIdxs % folds != i]]
+        trainIdxs[i] = allDataIdxs[np.isin(dataPatientIDs, trainIDs)]
+    valIdxs = allTrainValParts
+
+    print('kFold shuffling and splitting complete!')
+
+    def getTTS():
+        splits = [None] * folds
+        for i in range(folds):
+            splits[i] = [trainIdxs, valIdxs]
+        return splits
+
+    scores = cross_val_score(estimator, crossValX, crossValY, cv=getTTS(), scoring='accuracy')
     print('cross fold validation scores:')
     print(scores)
     print("%.2f (%.2f) MSE" % (scores.mean(), scores.std()))
