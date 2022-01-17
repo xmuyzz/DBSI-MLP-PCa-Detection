@@ -49,12 +49,16 @@ def get_data_invivo_kFoldVal(proj_dir, benign_bix, benign_nobix, pca_bix, exclud
     df1 = dfs[0]
     df2 = dfs[1]
     df3 = dfs[2]
-
+    df_exclude, df_excludeX, df_excludeY = [None]
     ## exlude 5 patients for validation
     if exclude_patient == True:
         print('exclude pat list:', exclude_list)
         indx = df3[df3['Sub_ID'].isin(exclude_list)].index
         print('total voxel:', df3.shape[0])
+        df_exclude = df3.iloc[indx]
+        df_excludeX = df_exclude.iloc[:, x_input]
+        df_excludeY = df_exclude['ROI_Class'].astype('int')
+        df_positions = df-exclude.loc["X","Y","Z"]
         df3.drop(indx, inplace=True)
         print('total voxel:', df3.shape[0])
     else:
@@ -115,4 +119,4 @@ def get_data_invivo_kFoldVal(proj_dir, benign_bix, benign_nobix, pca_bix, exclud
     print('val size:', len(y_val))
     print('test size:', len(y_test))
 
-    return x_train, y_train, x_val, y_val, x_test, y_test, df_val, df_test, trainIDs, valIDs, testIDs
+    return x_train, y_train, x_val, y_val, x_test, y_test, df_val, df_test, trainIDs, valIDs, testIDs, df_excludeX, df_excludeY, df_positions

@@ -28,13 +28,13 @@ from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.utils import resample
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, cross_val_predict
 from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
 import random, copy
 
 def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
                  trainIDs, valIDs, testIDs, df_val, df_test, proj_dir, 
-                 batch_size, epoch, loss, optimizer, folds):
+                 batch_size, epoch, loss, optimizer, folds, exclude_list):
 
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     def buildModel():
@@ -50,8 +50,8 @@ def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
     crossValX = np.concatenate((x_train, x_test))
     crossValY = np.concatenate((y_train, y_test))
 
-    print(type(trainIDs))
-    print(type(valIDs))
+    # print(type(trainIDs))
+    # print(type(valIDs))
 
     dataPatientIDs = np.array(list(trainIDs)+list(valIDs))
     allDataIdxs = range(dataPatientIDs.size)
@@ -69,42 +69,64 @@ def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
 
     for i in range(folds):
         valIDs = patientIDs[shuffledIdxs[trainValIdxs % folds == i]]
-        allTrainValParts[i] = allDataIdxs[np.isin(dataPatientIDs, valIDs)]
-        trainIDs = patientIDs[shuffledIdxs[trainValIdxs % folds != i]]
-        trainIdxs[i] = allDataIdxs[np.isin(dataPatientIDs, trainIDs)]
-    valIdxs = allTrainValParts
+        allTrainValParts[i] = []
+        trainIdxs[i] = []
+        for j in range(len(dataPatientIDs)):
+            if dataPatientIDs[j] in valIDs:
+                allTrainValParts[i].append(j)
+            else:
+                trainIdxs[i].append(j)
+    valIdxs = np.array(allTrainValParts)
+    trainIdxs = np.array(trainIdxs)
 
     print('kFold shuffling and splitting complete!')
 
+    for i in range(folds):
+        print("foldnum " + str(i))
+        print(len(trainIdxs[i]))
+        print(len(valIdxs[i]))
     def getTTS():
         splits = [None] * folds
         for i in range(folds):
-            splits[i] = [trainIdxs, valIdxs]
+            splits[i] = [trainIdxs[i], valIdxs[i]]
         return splits
+
+    # splits = getTTS()
+    # print(np.array(splits).shape)
 
     scores = cross_val_score(estimator, crossValX, crossValY, cv=getTTS(), scoring='accuracy')
     print('cross fold validation scores:')
     print(scores)
     print("%.2f (%.2f) MSE" % (scores.mean(), scores.std()))
 
-    history = model.fit(
-        x=x_train,
-        y=y_train,
-        batch_size=batch_size,
-        epochs=epoch,
-        verbose=1,
-        callbacks=None,
-        validation_split=None,
-        validation_data=(x_val, y_val),
-        shuffle=True,
-        class_weight=None,
-        sample_weight=None,
-        initial_epoch=0,
-        steps_per_epoch=None,
-        validation_steps=None,
-        )
+    predictionsCrossVal = cross_val_predict(estimator, crossValX, crossValY, cv=getTTS())
+    print(predictionsCrossVal)
 
-    
+    model.save_weights(os.path.join(pro_data_dir, 'invivoModelInitialWts.h5'))
+    #^^ensures every training model has "clean slate" of weights so it is not incrementally trained
+    predCrossVal = [None] * folds
+    for i in range(folds):
+        model.load_weights(os.path.join(pro_data_dir, 'invivoModelInitialWts.h5'))
+        predCrossVal[i] = model.fit(
+            x=crossValX[trainIdxs[i]],
+            y=crossValY[trainIdxs[i]],
+            batch_size=batch_size,
+            epochs=epoch,
+            verbose=1,
+            callbacks=None,
+            validation_split=None,
+            validation_data=(crossValX[valIdxs[i]], crossValY[valIdxs[i]]),
+            shuffle=True,
+            class_weight=None,
+            sample_weight=None,
+            initial_epoch=0,
+            steps_per_epoch=None,
+            validation_steps=None,
+            )
+
+    #TODO: make matrix of image size filled with 0, make predictions on whatever the data stuff is,
+    #get the coordinates and fill in matrix from there. Save models. In seperate code, load models,
+    #Take average from all 5 cross-val models, do a majority vote, then final matrix turns into mask.
     y_pred = model.predict(x_test)
     y_pred_class = np.argmax(y_pred, axis=1)
     score = model.evaluate(x_test, y_test, verbose=0)
