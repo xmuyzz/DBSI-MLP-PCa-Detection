@@ -31,10 +31,12 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import cross_val_score, cross_val_predict
 from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
 import random, copy
+from crossValCreateMask import crossValCreateMask, ensemblePred
 
 def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
                  trainIDs, valIDs, testIDs, df_val, df_test, proj_dir, 
-                 batch_size, epoch, loss, optimizer, folds, exclude_list):
+                 batch_size, epoch, loss, optimizer, folds, exclude_patient,
+                 exclude_list, df_excludeX, df_excludeY, df_positions, makeMask, mapType):
 
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     def buildModel():
@@ -99,15 +101,13 @@ def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
     print(scores)
     print("%.2f (%.2f) MSE" % (scores.mean(), scores.std()))
 
-    predictionsCrossVal = cross_val_predict(estimator, crossValX, crossValY, cv=getTTS())
-    print(predictionsCrossVal)
-
     model.save_weights(os.path.join(pro_data_dir, 'invivoModelInitialWts.h5'))
     #^^ensures every training model has "clean slate" of weights so it is not incrementally trained
-    predCrossVal = [None] * folds
+    modelNames = [None] * folds
+    histories = [None] * folds
     for i in range(folds):
         model.load_weights(os.path.join(pro_data_dir, 'invivoModelInitialWts.h5'))
-        predCrossVal[i] = model.fit(
+        histories[i] = model.fit(
             x=crossValX[trainIdxs[i]],
             y=crossValY[trainIdxs[i]],
             batch_size=batch_size,
@@ -123,10 +123,34 @@ def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
             steps_per_epoch=None,
             validation_steps=None,
             )
-
+        saveName = "valModel"+ str(i+1) +".h5"
+        modelNames[i] = saveName
+        model.save(os.path.join(pro_data_dir,saveName))
     #TODO: make matrix of image size filled with 0, make predictions on whatever the data stuff is,
     #get the coordinates and fill in matrix from there. Save models. In seperate code, load models,
     #Take average from all 5 cross-val models, do a majority vote, then final matrix turns into mask.
+    print("cross validation models saved! Creating masks on excluded data...")
+    if exclude_patient:
+        crossValCreateMask(modelNames, proj_dir, df_excludeX, df_excludeY, df_positions, exclude_list, makeMask, mapType)
+
+    print("Cross Validation masks done! Developing overall model:")
+    model.load_weights(os.path.join(pro_data_dir, 'invivoModelInitialWts.h5'))
+    history = model.fit(
+        x=x_train,
+        y=y_train,
+        batch_size=batch_size,
+        epochs=epoch,
+        verbose=1,
+        callbacks=None,
+        validation_split=None,
+        validation_data=(x_val, y_val),
+        shuffle=True,
+        class_weight=None,
+        sample_weight=None,
+        initial_epoch=0,
+        steps_per_epoch=None,
+        validation_steps=None,
+        )
     y_pred = model.predict(x_test)
     y_pred_class = np.argmax(y_pred, axis=1)
     score = model.evaluate(x_test, y_test, verbose=0)
@@ -172,5 +196,3 @@ def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
     print(df_mean)
     test_pat_pred.to_csv(os.path.join(pro_data_dir, 'invivo_pat_pred.csv'))
     print('successfully save test patient prediction!')
-
-

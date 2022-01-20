@@ -49,16 +49,24 @@ def get_data_invivo_kFoldVal(proj_dir, benign_bix, benign_nobix, pca_bix, exclud
     df1 = dfs[0]
     df2 = dfs[1]
     df3 = dfs[2]
-    df_exclude, df_excludeX, df_excludeY = [None]
+    df1.columns = df1.columns.str.replace(' ', '')
+    df2.columns = df2.columns.str.replace(' ', '')
+    df3.columns = df3.columns.str.replace(' ', '')
+    # print(df3.columns)
+    df_exclude, df_excludeX, df_excludeY = [None, None, None]
     ## exlude 5 patients for validation
     if exclude_patient == True:
         print('exclude pat list:', exclude_list)
         indx = df3[df3['Sub_ID'].isin(exclude_list)].index
         print('total voxel:', df3.shape[0])
         df_exclude = df3.iloc[indx]
+        # print(df_exclude.columns)
         df_excludeX = df_exclude.iloc[:, x_input]
         df_excludeY = df_exclude['ROI_Class'].astype('int')
-        df_positions = df-exclude.loc["X","Y","Z"]
+        df_positions = df_exclude.loc[:,['Sub_ID','X','Y','Z']]
+        # df_excludeX.to_csv(os.path.join(proj_dir, 'excludeX.csv'))
+        # df_excludeY.to_csv(os.path.join(proj_dir, 'excludeY.csv'))
+        # df_positions.to_csv(os.path.join(proj_dir, 'excludePositions.csv'))
         df3.drop(indx, inplace=True)
         print('total voxel:', df3.shape[0])
     else:

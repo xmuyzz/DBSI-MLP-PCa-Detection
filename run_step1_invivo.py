@@ -43,10 +43,13 @@ if __name__ == '__main__':
     bootstrap = 100
     data_type = 'invivo'
     numFolds = 5
+    makeMask = True
+    mapType = 'dti_adc_map.nii'
 
 
     x_train, y_train, x_val, y_val, x_test, y_test, \
-    df_val, df_test, trainIDs, valIDs, testIDs, df_excludeX, df_excludeY = get_data_invivo_kFoldVal(
+    df_val, df_test, trainIDs, valIDs, testIDs, \
+    df_excludeX, df_excludeY, df_positions = get_data_invivo_kFoldVal(
         proj_dir=proj_dir,
         benign_bix=benign_bix,
         benign_nobix=benign_nobix,
@@ -87,7 +90,10 @@ if __name__ == '__main__':
         exclude_patient=exclude_patient,
         exclude_list=exclude_list,
         df_excludeX=df_excludeX, 
-        df_excludeY=df_excludeY
+        df_excludeY=df_excludeY,
+        df_positions=df_positions,
+        makeMask=makeMask,
+        mapType=mapType
         )
 
     roc_stat = get_roc(
@@ -100,6 +106,6 @@ if __name__ == '__main__':
     prc_stat = get_prc(
         proj_dir=proj_dir,
         output_dir=output_dir,
-        data_type = data_type
+        data_type=data_type
         )
 
