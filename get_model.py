@@ -50,7 +50,7 @@ def get_model(init, dropout_rate, momentum, n_input, n_layer):
         model.add(Dropout(dropout_rate))
 
     # output layer
-    model.add(Dense(3))
+    model.add(Dense(2))
     model.add(BatchNormalization(momentum=momentum))
     model.add(Activation('softmax'))
 

@@ -71,7 +71,6 @@ def get_data_invivo_kFoldVal(proj_dir, benign_bix, benign_nobix, pca_bix, exclud
         print('total voxel:', df3.shape[0])
     else:
         df3 = df3
-
     ## split PCa cohorts to train/val and test
     train_inds, test_inds = next(GroupShuffleSplit(
         test_size=0.5,
@@ -114,10 +113,24 @@ def get_data_invivo_kFoldVal(proj_dir, benign_bix, benign_nobix, pca_bix, exclud
     valIDs = df_val.loc[:, 'Sub_ID'].to_numpy()
     testIDs = df_test.loc[:, 'Sub_ID'].to_numpy()
 
-    # scale data#
-    x_train = MinMaxScaler().fit_transform(x_train)
-    x_val = MinMaxScaler().fit_transform(x_val)
-    x_test = MinMaxScaler().fit_transform(x_test)
+    #manual scaling of all data. Prevents different scaling based on splits. 
+    #Makes more sense too; future test cases can be scaled based on this min 
+    #and max; after verification, becomes part of dataset to regenerate new min and max
+    allData = pd.concat([x_train, x_val, x_test])
+    minData = allData.min(axis=0)
+    maxData = allData.max(axis=0)
+    
+    # minData.to_csv(os.path.join(proj_dir, 'minData.csv'))
+    # maxData.to_csv(os.path.join(proj_dir, 'maxData.csv'))
+
+    x_train = (x_train-minData)/(maxData-minData)
+    x_val = (x_val-minData)/(maxData-minData)
+    x_test = (x_test-minData)/(maxData-minData)
+
+    # scale data #NOTE: check if manual scale has been done above already
+    # x_train = MinMaxScaler().fit_transform(x_train)
+    # x_val = MinMaxScaler().fit_transform(x_val)
+    # x_test = MinMaxScaler().fit_transform(x_test)
 
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.max_rows', 500)

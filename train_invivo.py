@@ -10,9 +10,9 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from time import gmtime, strftime
 
-from tensorflow.keras import initializers
+from tensorflow.keras import initializers, models
 from tensorflow.keras.optimizers import RMSprop, Adam
-from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.models import Sequential, Model, load_model
 from tensorflow.keras.layers import Input, Dense, Reshape, Activation, Dropout
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
@@ -49,36 +49,36 @@ def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
     
     estimator = KerasClassifier(build_fn=buildModel, epochs=epoch, batch_size=batch_size, verbose=1)
 
-    crossValX = np.concatenate((x_train, x_test))
-    crossValY = np.concatenate((y_train, y_test))
+    crossValX = np.concatenate((x_train, x_val))
+    crossValY = np.concatenate((y_train, y_val))
 
     # print(type(trainIDs))
     # print(type(valIDs))
 
-    dataPatientIDs = np.array(list(trainIDs)+list(valIDs))
-    allDataIdxs = range(dataPatientIDs.size)
+    dataPatientIDs = np.array(list(trainIDs)+list(valIDs)) #IDs of all patients for every voxel for train and validation sets
+    allDataIdxs = range(dataPatientIDs.size) #unique patient IDs
 
     patientIDs = np.unique(dataPatientIDs)
     print('number of patients:')
     print(len(patientIDs))
     trainValIdxs = np.array(list(range(len(patientIDs))))
-    shuffledIdxs = copy.deepcopy(trainValIdxs)
+    shuffledIdxs = copy.deepcopy(trainValIdxs) #shuffled patient indicies (i.e. 0th patient = 0, 1st patient 1 = 1, 2nd patient = 2, etc.)
     random.shuffle(shuffledIdxs)
     # print(trainValIdxs)
     # print(shuffledIdxs)
-    allTrainValParts = [None] * folds
+    valIdxs = [None] * folds
     trainIdxs  = [None] * folds
 
     for i in range(folds):
-        valIDs = patientIDs[shuffledIdxs[trainValIdxs % folds == i]]
-        allTrainValParts[i] = []
+        valIDs = patientIDs[shuffledIdxs[trainValIdxs % folds == i]] #the actual patient IDs that will be for validation
+        valIdxs[i] = [] #row number of entire dataframe for validation data
         trainIdxs[i] = []
         for j in range(len(dataPatientIDs)):
             if dataPatientIDs[j] in valIDs:
-                allTrainValParts[i].append(j)
+                valIdxs[i].append(j)
             else:
                 trainIdxs[i].append(j)
-    valIdxs = np.array(allTrainValParts)
+    valIdxs = np.array(valIdxs)
     trainIdxs = np.array(trainIdxs)
 
     print('kFold shuffling and splitting complete!')
@@ -126,12 +126,37 @@ def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
         saveName = "valModel"+ str(i+1) +".h5"
         modelNames[i] = saveName
         model.save(os.path.join(pro_data_dir,saveName))
+
+        #FOR TESTING ONLY
+        model1 = load_model(os.path.join(pro_data_dir, saveName))
+        y_pred = model1.predict(crossValX[valIdxs[i]])
+        y_pred_class = np.argmax(y_pred, axis=1)
+        score = model1.evaluate(crossValX[valIdxs[i]], crossValY[valIdxs[i]], verbose=0)
+        loss = np.around(score[0], 3)
+        acc = np.around(score[1], 3)
+        print(saveName + " metrics on val:")
+        print('acc:', acc)
+        print('loss:', loss)
+
+        y_pred = model1.predict(x_test)
+        # print(y_pred)
+        y_pred_class = np.argmax(y_pred, axis=1)
+        # print(np.sum(y_pred_class==0))
+        # print(np.sum(y_pred_class==1))
+        # print(np.sum(y_pred_class==2))
+        score = model1.evaluate(x_test, y_test, verbose=0)
+        loss = np.around(score[0], 3)
+        acc = np.around(score[1], 3)
+        print(saveName + " metrics on test:")
+        print('acc:', acc)
+        print('loss:', loss)
+
     #TODO: make matrix of image size filled with 0, make predictions on whatever the data stuff is,
     #get the coordinates and fill in matrix from there. Save models. In seperate code, load models,
     #Take average from all 5 cross-val models, do a majority vote, then final matrix turns into mask.
     print("cross validation models saved! Creating masks on excluded data...")
-    if exclude_patient:
-        crossValCreateMask(modelNames, proj_dir, df_excludeX, df_excludeY, df_positions, exclude_list, makeMask, mapType)
+    if exclude_patient: #df_excludeX is TUMOR DATA ONLY, so results aren't that useful, but is good check
+        crossValCreateMask(modelNames, proj_dir, df_excludeX, df_positions, exclude_list, makeMask, mapType)
 
     print("Cross Validation masks done! Developing overall model:")
     model.load_weights(os.path.join(pro_data_dir, 'invivoModelInitialWts.h5'))

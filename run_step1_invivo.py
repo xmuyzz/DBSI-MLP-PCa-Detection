@@ -17,8 +17,7 @@ if __name__ == '__main__':
     benign_bix = 'benign_biopsy.csv'
     pca_bix = 'pca_biopsy.csv'
     exclude_patient = True
-    exclude_list = ['001_ZHOU_CHAO_GANG', '002_ZHU_XIN_GEN', '007_SHEN_QIU_YU',
-                    '016_LIU_FENG_MEI', '028_XUE_LUO_PING']
+    exclude_list = ['001_ZHOU_CHAO_GANG', '002_ZHU_XIN_GEN', '007_SHEN_QIU_YU', '028_XUE_LUO_PING', '043_ZHOU_XIAO_DI']
     alpha = 0.3
     random_state = 42
     ELU_alpha = 1.0
