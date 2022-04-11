@@ -1,39 +1,14 @@
 import os
 import timeit
-import itertools
 import numpy as np
 import pandas as pd
-import seaborn as sn
-import glob2 as glob
-from functools import partial
 from datetime import datetime
-import matplotlib.pyplot as plt
 from time import gmtime, strftime
 
-from tensorflow.keras import initializers
-from tensorflow.keras.optimizers import RMSprop, Adam
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Input, Dense, Reshape, Activation, Dropout
-from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-from tensorflow.keras.layers import ELU, LeakyReLU
-import tensorflow
-from sklearn.model_selection import train_test_split, GroupShuffleSplit
-from sklearn.metrics import classification_report
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import precision_recall_curve, auc
-from sklearn.metrics import confusion_matrix
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.utils import resample
-from sklearn.metrics import roc_auc_score
 
 
-
-
-def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
-                 df_val, df_test, proj_dir, batch_size, epoch, loss, optimizer):
+def train(model, x_train, y_train, x_val, y_val, x_test, y_test,
+          df_val, df_test, proj_dir, batch_size, epoch, loss, optimizer):
 
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
 
@@ -70,7 +45,6 @@ def train_invivo(model, x_train, y_train, x_val, y_val, x_test, y_test,
     print('loss:', loss)
 
     # save model
-    #-------------
     model.save(os.path.join(pro_data_dir, 'invivo_model.h5'))
 
     # save a df for test and prediction

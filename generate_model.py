@@ -32,7 +32,7 @@ from sklearn.metrics import roc_auc_score
 
 
 
-def get_model(init, dropout_rate, momentum, n_input, n_layer):
+def generate_model(init, dropout_rate, momentum, n_input, n_layer):
 
     model = Sequential()
 
