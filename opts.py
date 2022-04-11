@@ -26,7 +26,7 @@ def parse_opts():
     parser.add_argument('--n_neurons', default=100, type=int, help='number of neurons per layer')
     parser.add_argument('--batch_size', default=256, type=int, help='Batch size')
     parser.add_argument('--lr', default=1e-5, type=float, help='learning rate')
-    parser.add_argument('--epoch', default=3, type=int, help='Epoch')
+    parser.add_argument('--train_epoch', default=3, type=int, help='train epoch')
     parser.add_argument('--activation', default='elu', type=str, help='(relu|elu|leaky_relu)')
     parser.add_argument('--output_activation', default='softmax', type=str, help='Output activation function')
     parser.add_argument('--loss_function', default='sparse_categorical_crossentropy', type=str, help='loss function')
@@ -38,6 +38,11 @@ def parse_opts():
     # evalute model                        
     parser.add_argument('--n_bootstrap', default=1000, type=int, help='bootstrap to calcualte 95% CI of AUC')
 
+    # finetune model                        
+    parser.add_argument('--freeze_layer', default=None, type=int, help='freeze layer to fine tune model')
+    parser.add_argument('--saved_model', default='invivo_model.h5', type=str, help='saved model name')
+    parser.add_argument('--finetune_epoch', default=3, type=int, help='fine tune epoch')
+
     # others 
     parser.add_argument('--train', action='store_true', help='If true, training is performed.')
     parser.set_defaults(train=True)
@@ -45,9 +50,11 @@ def parse_opts():
     parser.set_defaults(val=False)
     parser.add_argument('--test', action='store_true', help='If true, test is performed.')
     parser.set_defaults(test=False)
-    parser.add_argument('--finetune', action='store_true', help='If true, test is performed.')
+    parser.add_argument('--finetune', action='store_true', help='If true, finetune is performed.')
     parser.set_defaults(test=False)
-    parser.add_argument('--get_stat', action='store_true', help='If true, test is performed.')
+    parser.add_argument('--get_stat', action='store_true', help='If true, get_stat is performed.')
+    parser.set_defaults(test=False)
+    parser.add_argument('--wu_spit', action='store_true', help='If true, wu_slpit is performed.')
     parser.set_defaults(test=False)
 
     args = parser.parse_args()

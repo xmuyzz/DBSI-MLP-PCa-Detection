@@ -1,12 +1,3 @@
-#----------------------------------------------------------------------
-# deep learning classifier using a multiple layer perceptron (MLP)
-# 
-# Author: Zezhong Ye @ Washington University School of Medicine
-# Date: 03.14.2019
-# Contact: ze-zhong@wustl.edu 
-#-------------------------------------------------------------------------------------------
-
-
 import os
 import winsound
 import timeit
@@ -50,8 +41,6 @@ from sklearn.preprocessing import MaxAbsScaler, StandardScaler, MinMaxScaler
 
 
 
-# load inference data
-# --------------------------      
 def load_pred_data():
 
     # DBSI metric map list for training data
@@ -88,8 +77,6 @@ def load_pred_data():
     return x_pred, df_pred
 
 
-# prediction
-# ----------------
 def model_predict():
 
     img = np.zeros(shape=(280, 224, 24))
@@ -112,8 +99,6 @@ def model_predict():
     return PCa_pred_map, PCa_pred
 
 
-# prediction map filter
-# ------------------------------
 def flood(img, position, conn):
     
     floodMask = np.zeros(img.shape)
@@ -222,9 +207,6 @@ def tumor_map_filter():
     # print(sum(flood(roiArr[:,:,9], [149,104], conn).flatten()))
 
 
-# ----------------------------------------------------------------------------------
-# run the model
-# ---------------------------------------------------------------------------------- 
 if __name__ == '__main__':
 
     
