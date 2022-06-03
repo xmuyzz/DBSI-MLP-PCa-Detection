@@ -1,4 +1,3 @@
-
 import os
 import timeit
 import itertools
@@ -73,8 +72,7 @@ def finetune_exvivo(x_train, y_train, proj_dir, saved_model, batch_size, epoch, 
         shuffle=True,
         class_weight=None,
         sample_weight=None,
-        initial_epoch=0
-        )
+        initial_epoch=0)
 
     #### save final model
     model_fn = 'Tuned_model'

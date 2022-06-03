@@ -12,13 +12,8 @@ def train(model, x_train, y_train, x_val, y_val, x_test, y_test,
 
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
 
-    model.compile(
-        loss=loss,
-        optimizer=optimizer,
-        metrics=['accuracy']
-        )
+    model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
     model.summary()
-
     history = model.fit(
         x=x_train,
         y=y_train,
@@ -33,9 +28,7 @@ def train(model, x_train, y_train, x_val, y_val, x_test, y_test,
         sample_weight=None,
         initial_epoch=0,
         steps_per_epoch=None,
-        validation_steps=None,
-        )
-
+        validation_steps=None)
     y_pred = model.predict(x_test)
     y_pred_class = np.argmax(y_pred, axis=1)
     score = model.evaluate(x_test, y_test, verbose=0)
@@ -48,7 +41,6 @@ def train(model, x_train, y_train, x_val, y_val, x_test, y_test,
     model.save(os.path.join(pro_data_dir, 'invivo_model.h5'))
 
     # save a df for test and prediction
-    #------------------------------------
     df_test['y_pred'] = y_pred[:, 1]
     df_test['y_pred_class'] = y_pred_class
     df_test.rename(columns={'ROI_Class': 'y_test'}, inplace=True)
@@ -57,7 +49,6 @@ def train(model, x_train, y_train, x_val, y_val, x_test, y_test,
     print('successfully save test voxel prediction!')
 
     # get pred class on patient level
-    #-------------------------------------
     df_mean = test_voxel_pred.groupby(['Sub_ID'], as_index=False).mean()
     #print(df_mean)
     label_pat = df_mean['y_test'].to_numpy()

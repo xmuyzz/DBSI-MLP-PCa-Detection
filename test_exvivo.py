@@ -1,4 +1,3 @@
-
 import os
 import timeit
 import itertools
@@ -55,7 +54,6 @@ def test_exvivo(proj_dir, output_dir, wu_split, x_test, y_test, df_test, x_test1
     print('loss:', loss)
     
     # save a df for test on voxel
-    #--------------------------------
     df_test['y_pred'] = y_pred[:, 1]
     df_test['y_pred_class'] = y_pred_class
     df_test.rename(columns={'ROI_Class': 'y_test'}, inplace=True)
@@ -64,7 +62,6 @@ def test_exvivo(proj_dir, output_dir, wu_split, x_test, y_test, df_test, x_test1
     print('successfully save test voxel prediction!')
 
     # get pred class on patient level
-    #----------------------------------
     df_mean = test_voxel_pred.groupby(['ID'], as_index=False).mean()
     print(df_mean)
     label_pat = df_mean['y_test'].to_numpy()
@@ -88,3 +85,6 @@ def test_exvivo(proj_dir, output_dir, wu_split, x_test, y_test, df_test, x_test1
     print('patient label:', test_pat_pred.groupby('y_test').count())
     test_pat_pred.to_csv(os.path.join(pro_data_dir, 'exvivo_pat_pred.csv'))
     print('successfully save test patient prediction!')
+
+
+

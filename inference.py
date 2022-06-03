@@ -1,49 +1,44 @@
 import os
-import winsound
-import timeit
-import itertools
 import numpy as np
 import pandas as pd
-import seaborn as sn
-import glob2 as glob
 import nibabel as nib
 import ntpath
 import queue
 import datetime
 import matplotlib.pyplot as plt
 from functools import partial
-from datetime import datetime
-from collections import Counter
-from time import gmtime, strftime
-
-from imblearn.over_sampling import SMOTE, SVMSMOTE, KMeansSMOTE
-from imblearn.over_sampling import RandomOverSampler
-
-import tensorflow
-from tensorflow.keras import initializers
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import Sequential, Model, load_model
-from tensorflow.keras.layers import Input, Dense, Reshape, Activation, Dropout
-from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-from tensorflow.keras.losses import sparse_categorical_crossentropy
-from tensorflow.keras.activations import elu, relu, softmax
-from tensorflow.keras.initializers import HeNormal
-
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import classification_report
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import precision_recall_curve, auc
-from sklearn.metrics import confusion_matrix
-from sklearn.preprocessing import MaxAbsScaler, StandardScaler, MinMaxScaler 
+from tensorflow.keras.models import load_model
+import glob
 
 
 
-def load_pred_data():
+def get_roi_data(data_dir, out_dir):
 
-    # DBSI metric map list for training data
+    param_list = [
+                 'b0_map',                        #07
+                 'dti_adc_map',                   #08
+                 'dti_axial_map',                 #09
+                 'dti_fa_map',                    #10
+                 'dti_radial_map',                #11
+                 'fiber_ratio_map',            #12
+                 'fiber1_axial_map',              #13
+                 'fiber1_fa_map',                 #14
+                 'fiber1_fiber_ratio_map',     #15
+                 'fiber1_radial_map',             #16
+                 'fiber2_axial_map',              #17
+                 'fiber2_fa_map',                 #18
+                 'fiber2_fiber_ratio_map',     #19
+                 'fiber2_radial_map',             #20
+                 'hindered_adc_map',              #21
+                 'hindered_ratio_map',         #22
+                 'iso_adc_map',                   #23
+                 'restricted_adc_1_map',     #24
+                 'restricted_adc_2_map',            #25
+                 'restricted_ratio_1_map',#26
+                 'restricted_ratio_2_map',       #27
+                 'water_adc_map',                 #28
+                 'water_ratio_map',            #29
+                ]
     param_id = [
                  'b0',                        #07
                  'dti_adc',                   #08
@@ -69,34 +64,89 @@ def load_pred_data():
                  'water_adc',                 #28
                  'water_fraction',            #29
                 ]
-   
-    pred_file = str(case_id) + '_' + 'prostate' + '.csv'
-    df_pred = pd.read_csv(os.path.join(pred_dir, pred_file))
-    x_pred  = df_pred.iloc[:, x_input].astype('float64')
 
-    return x_pred, df_pred
+    dirs = []
+    for dirName, subdirList, fileList in os.walk(data_dir):
+        for dirname in range(len(subdirList)):
+            if subdirList[dirname] == 'DBSI_results_0.1_0.1_0.8_0.8_1.5_1.5':
+                #look for correct thresholds of files; append to dirs
+                dirs.append(os.path.join(dirName, subdirList[dirname]))  
+    # insert voxel index and information into each column
+    col_list = param_id  
+    col_list.insert(0, 'ROI_Class')
+    col_list.insert(0, 'ROI_ID')
+    col_list.insert(0, 'Voxel')
+    col_list.insert(0, 'Z')
+    col_list.insert(0, 'Y')
+    col_list.insert(0, 'X')
+    col_list.insert(0, 'Sub_ID')
+    df_stat = pd.DataFrame([], columns=col_list)
+    for dir in dirs: 
+        sub_id = os.path.basename(os.path.dirname(dir))   
+        #print(sub_id)        
+        roi_path = dir
+        rois = [os.path.join(roi_path, 'roi.nii.gz')]
+        # looking at each roi individually                       
+        for roi in rois: 
+            stat = []
+            try:
+                atlas = nib.load(roi).get_data() 
+            except:
+                print('No roi')
+                continue
+            roi_folder, roi_name = os.path.split(roi) 
+            current_dir = dir
+            # find all rois per file, look at the first one
+            if len(np.unique(atlas[atlas > 0])) > 0: 
+                roi_id = np.unique(atlas[atlas > 0])[0]
+            idx = np.asarray(np.where(atlas == roi_id))
+            for item in range(len(param_list)):
+                print(item)
+                print(param_list[item])
+                img = nib.load(glob.glob(os.path.join(current_dir, param_list[item] + '.nii'))[0]).get_data()
+                #print(img)
+                sub_data = img[atlas == roi_id]
+                stat.append(sub_data)
+            # insert voxel index and information into each column  
+            val = np.asarray(stat).astype(np.float32)
+            # -4 for .nii file, -7 for nii.gz file
+            val = np.concatenate((np.repeat(roi_name[:-7], len(sub_data))[np.newaxis], val), axis=0)
+            val = np.concatenate((np.repeat(roi_id, len(sub_data))[np.newaxis], val), axis=0)
+            val = np.concatenate((np.asarray(range(0, len(sub_data)))[np.newaxis], val), axis=0)
+            val = np.concatenate((idx, val), axis=0)
+            val = np.concatenate((np.repeat(sub_id, len(sub_data))[np.newaxis], val), axis=0)
+            val = np.transpose(val)
+            df = pd.DataFrame(val, columns=col_list)
+            df_stat = pd.concat([df_stat, df])
+            df_stat[df_stat.columns[7:29]] = df_stat[df_stat.columns[7:29]].astype('float64')
+    df_stat.fillna(df_stat.median(), inplace=True)
+    csv_file = 'prostate' + '.csv'
+    df_stat.to_csv(os.path.join(out_dir, csv_file), index=False)
+    print(df_stat)
+
+    return df_stat
 
 
-def model_predict():
+def model_predict(pro_data_dir, out_dir, df_stat, x_input, overlaid_map):
 
-    img = np.zeros(shape=(280, 224, 24))
-    x_index = np.asarray(df_pred.iloc[:, [1]])[:, 0].astype(int)
-    y_index = np.asarray(df_pred.iloc[:, [2]])[:, 0].astype(int)
-    z_index = np.asarray(df_pred.iloc[:, [3]])[:, 0].astype(int)
-
+    df = df_stat
+    x_pred  = df.iloc[:, x_input].astype('float64')
+    model = load_model(os.path.join(pro_data_dir, 'Tuned_model'))
+    pred = model.predict(x_pred)
+    print(pred)
+    pred_class = np.argmax(pred, axis=1)
+    print(pred_class)
+    img = np.zeros(shape=(128, 128, 10))
+    x_index = np.asarray(df.iloc[:, [1]])[:, 0].astype(int)
+    y_index = np.asarray(df.iloc[:, [2]])[:, 0].astype(int)
+    z_index = np.asarray(df.iloc[:, [3]])[:, 0].astype(int)
     for i in range(x_index.shape[0]):
         img[x_index[i], y_index[i], z_index[i]] = pred_class[i]
-            
-    aff = nib.load(
-        os.path.join(pred_dir, DBSI_folder, overlaid_map)
-        ).get_affine()
-    
-    PCa_pred = nib.Nifti1Image(img, aff)
-    PCa_pred_map = 'tumor_map' + '_' + strftime('%d-%b-%Y-%H-%M-%S', gmtime()) + '.nii'
-    #pred_map = 'tumor_map.nii'
-    nib.save(PCa_pred, os.path.join(pred_dir, PCa_pred_map))
+    aff = nib.load(overlaid_map).affine
+    tumor_pred = nib.Nifti1Image(img, aff)
+    nib.save(tumor_pred, os.path.join(out_dir, 'tumor_map.nii.gz'))
 
-    return PCa_pred_map, PCa_pred
+    return tumor_pred
 
 
 def flood(img, position, conn):
@@ -144,6 +194,7 @@ def flood(img, position, conn):
     #     print("sum floodMask:",sum(floodMask.flatten()))
     return floodMask
 
+
 def labelComponents(img, conn): 
     #for each voxel, put size of the component it is connected to on it
     
@@ -156,6 +207,7 @@ def labelComponents(img, conn):
             binaryLabels = np.add(binaryLabels, flood(img, [i, j], conn))
     # print(binaryLabels)
     return binaryLabels
+
 
 def getComponentsThreshold(img, conn, threshold):
     
@@ -172,11 +224,12 @@ def getComponentsThreshold(img, conn, threshold):
                 
     return componentsAboveThresh
 
+
 def tumor_map_filter():
 
-    PCa_pred_map, PCa_pred = model_predict()
+    tumor_pred = model_predict()
     #roi = PCa_pred
-    roi = os.path.join(pred_dir, PCa_pred_map)、
+    roi = os.path.join(pred_dir, 'tumor_pred.nii.gz')
     try:
         atlas = nib.load(roi).get_data()
     except:
@@ -210,54 +263,19 @@ def tumor_map_filter():
 if __name__ == '__main__':
 
     
-    x_input = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 28, 29]
+    x_input = range(12, 30)
     conn = 0 # if conn=0, 8-connectivity; if 1, then 4-connectivity
     threshold = 5 # threshold of elimination (component size)
-
-    proj_dir = 'D:/2020_PCa_Project/WUSM_PCa/DBSI_Data'
-    overlaid_map = 'dti_adc_map.nii'
-    ROI_name = 'roi.nii.gz'
-    DBSI_folder = 'DHI_results_0.1_0.8_0.8_2.3_2.3'
-
-    list_case = ['P011', 'P012', 'P013', 'P014', 'P015', 'P016', 'P017', 'P019',
-                 'P021', 'P022', 'P023', 'P025', 'P026', 'P028', 'P030']
-
-    #list_case = ['P023']
-
-    tot_run = len(list_case)
-    
+    data_dir = '/mnt/aertslab/USERS/Zezhong/others/pca/exvivo/WU007F11'
+    out_dir = '/mnt/aertslab/USERS/Zezhong/others/pca/exvivo'
+    pro_data_dir = '/home/xmuyzz/Harvard_AIM/others/pca/pro_data'
+    overlaid_map = os.path.join(data_dir, 'DBSI_results_0.1_0.1_0.8_0.8_1.5_1.5/dti_adc_map.nii')
+ 
     np.set_printoptions(threshold=np.inf)
+    df_stat = get_roi_data(data_dir, out_dir)
+    tumor_pred = model_predict(pro_data_dir, out_dir, df_stat, x_input, overlaid_map)
 
-    start = timeit.default_timer()
-
-    for case_id in list_case:
-
-        count += 1
-        print('\nRun:' + str(count) + '/' + str(tot_run))
-
-        print(str(case_id))
-
-        pred_dir = os.path.join(proj_dir, case_id)
-
-        x_pred, df_pred = load_pred_data()
-
-        model = load_model(os.path.join(pred_dir, 'my_model'))
-
-        pred = model.predict(x_pred)
-        pred_class = np.argmax(pred, axis=1)
-
-        PCa_pred_map, PCa_pred = model_predict()
-
-        filtered_map = tumor_map_filter()
-
-
-    stop = timeit.default_timer()
-    print('DNN Running Time:', np.around(stop - start, 0), 'seconds')
-
-    # dound alarm
-    duration = 200                       # milliseconds
-    freq     = 440                       # Hz
-    winsound.Beep(freq, duration)
+    #filtered_map = tumor_map_filter()
 
 
 
@@ -267,44 +285,3 @@ if __name__ == '__main__':
 
 
 
-##
-### ----------------------------------------------------------------------------------
-### create prediction
-### ----------------------------------------------------------------------------------
-##def show_map():
-##
-##    atlas = pred_map.astype(float)
-##    co = coordinates - 1
-##    
-##    img_adc = np.zeros([atlas.shape[0],atlas.shape[1],atlas.shape[2]])
-##    img_b0  = np.zeros([atlas.shape[0],atlas.shape[1],atlas.shape[2]])
-##    
-##    temp_atlas = copy.deepcopy(atlas)
-##    temp_atlas[temp_atlas[:]==0] = np.nan
-##    
-##    adc_data = np.asarray(adc_data['DTI_ADC']).transpose()
-##    b0_data  = np.asarray(adc_data['DTI_FA']).transpose()
-##    
-##    for img_idx in range(co.shape[1]):
-##        
-##        imdx = list(co[:, img_idx].astype(int))
-##        img_adc[imdx[0],imdx[1],imdx[2]] = adc_data[0,img_idx]
-##        img_b0[imdx[0],imdx[1],imdx[2]]  = b0_data[0,img_idx]
-##        
-##    fig = plt.figure(figsize=(24, 15))
-##    #ax  = fig.add_subplot(1,1,1)
-##    ax_1 = fig.add_subplot(2, 1, 1)
-##    ax.axis('off')
-##    ax.imshow(img_adc[:, :, idx[2, 1]], cmap='gray', vmin=0.2, vmax=3.0, aspect='equal')
-##    ax.imshow(temp_atlas[:, :, idx[2,1]], cmap='rainbow', alpha=0.35, aspect='equal')
-##    ax.set_title('Tumor Prediction', fontweight='bold')
-##    
-##    ax_2 = fig.add_subplot(2, 2, 1)
-##    ax_2.axis('off')
-##    ax_2.set_title('b0', fontweight='bold')
-##    ax_2.imshow(img_b0[:, :, idx[2,1]], cmap='gray', vmin=0, vmax=10, aspect='equal')
-##    ax_2.imshow(temp_atlas[:, :, idx[2,1]], cmap='rainbow', alpha=0.35, aspect='equal')
-##    
-##    plt.savefig(os.path.join(result_dir, 'tumor_map_%s.PNG'%roi_name[:-4]), format='PNG', dpi=100)
-##    plt.show()
-##    plt.close()

@@ -6,11 +6,10 @@ import glob2 as glob
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from imblearn.over_sampling import SMOTE
 
 
-
-def get_data_invivo(proj_dir, benign_bix, benign_nobix, pca_bix, exclude_patient,
-                    exclude_list, x_input):
+def get_data_invivo(proj_dir, benign_bix, benign_nobix, pca_bix, exclude_patient, x_input):
 
     """
     get in vivo dataset
@@ -47,17 +46,20 @@ def get_data_invivo(proj_dir, benign_bix, benign_nobix, pca_bix, exclude_patient
     dfs = []
     for data in [benign_nobix, benign_bix, pca_bix]:
         df = pd.read_csv(os.path.join(data_dir, data))
-        df['ROI_Class'].replace(['p', 'c', 't'], [0, 0, 1], inplace=True)
+        df['ROI_Class'].replace(['p', 'c', 't'], [0, 2, 1], inplace=True)
         df.fillna(0, inplace=True)
+        # only include class 0 and class 1
+        df = df[df['ROI_Class'].isin([0, 1])]
         dfs.append(df)
     df1 = dfs[0]
     df2 = dfs[1]
     df3 = dfs[2]
 
     ## exlude 5 patients for validation
-    if exclude_patient == True:
-        print('exclude pat list:', exclude_list)
-        indx = df3[df3['Sub_ID'].isin(exclude_list)].index
+    exclude = True
+    if exclude:
+        print('exclude pat list:', exclude_patient)
+        indx = df3[df3['Sub_ID'].isin(exclude_patient)].index
         print('total voxel:', df3.shape[0])
         df3.drop(indx, inplace=True)
         print('total voxel:', df3.shape[0])
@@ -108,7 +110,7 @@ def get_data_invivo(proj_dir, benign_bix, benign_nobix, pca_bix, exclude_patient
     return x_train, y_train, x_val, y_val, x_test, y_test, df_val, df_test
 
 
-def get_data_exvivo(proj_dir, exvivo_data, exclude_list, x_input):
+def get_data_exvivo(proj_dir, exvivo_data, x_input, exclude_patient=None):
 
     """
     get in vivo dataset
@@ -149,9 +151,9 @@ def get_data_exvivo(proj_dir, exvivo_data, exclude_list, x_input):
     ## only include class 0 and class 1
     df = df[df['ROI_Class'].isin([0, 1])]
     ## exlude patients
-    if exclude_list != None:
-        print(exclude_list)
-        indx = df[df['ID'].isin(exclude_list)].index
+    if exclude_patient != None:
+        print(exclude_patient)
+        indx = df[df['ID'].isin(exclude_patient)].index
         print('total voxel:', df.shape[0])
         df.drop(indx, inplace=True)
         print('total voxel:', df.shape[0])
