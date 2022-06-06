@@ -52,7 +52,10 @@ def test_exvivo(proj_dir, output_dir, wu_split, x_test, y_test, df_test, x_test1
     acc = np.around(score[1], 3)
     print('acc:', acc)
     print('loss:', loss)
-    
+    # classification report
+    #report = classification_report(y_test, y_pred_class, digits=3)
+    #print(report)
+
     # save a df for test on voxel
     df_test['y_pred'] = y_pred[:, 1]
     df_test['y_pred_class'] = y_pred_class
@@ -71,7 +74,7 @@ def test_exvivo(proj_dir, output_dir, wu_split, x_test, y_test, df_test, x_test1
     
     pred_class_pat = []
     for pred in pred_pat:
-        if pred > 0.16:
+        if pred > 0.5:
             pred = 1
         else:
             pred = 0
@@ -84,7 +87,7 @@ def test_exvivo(proj_dir, output_dir, wu_split, x_test, y_test, df_test, x_test1
     print(test_pat_pred)
     print('patient label:', test_pat_pred.groupby('y_test').count())
     test_pat_pred.to_csv(os.path.join(pro_data_dir, 'exvivo_pat_pred.csv'))
-    print('successfully save test patient prediction!')
 
-
-
+    # classification report
+    #report = classification_report(label_pat, pred_class_pat, digits=3)
+    #print(report)

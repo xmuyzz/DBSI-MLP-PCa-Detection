@@ -1,12 +1,12 @@
 import os
 import numpy as np
 import pandas as pd
-from utils.plot_roc import plot_roc
-from utils.roc_bootstrap import roc_bootstrap
+from statistics.plot_roc import plot_roc
+from statistics.roc_bootstrap import roc_bootstrap
 
 
 
-def get_roc(proj_dir, output_dir, bootstrap, data_type):
+def roc_all(proj_dir, output_dir, bootstrap, data_type):
     
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     

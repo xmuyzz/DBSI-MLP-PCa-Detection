@@ -7,8 +7,9 @@ from finetune import finetune_exvivo
 import random
 import numpy as np
 from train import train
-from statistics.get_roc import get_roc
-from statistics.get_prc import get_prc
+from statistics.roc_all import roc_all
+from statistics.prc_all import prc_all
+from statistics.cm_all import cm_all
 from opts import parse_opts
 from test_exvivo import test_exvivo
 
@@ -52,6 +53,10 @@ def main(opt):
                 loss=opt.loss_function,
                 optimizer=optimizer)
         if opt.get_stat:
+            cm_all(
+                proj_dir=opt.proj_dir,
+                output_dir=opt.output_dir,
+                data_type='invivo')
             roc_stat = get_roc(
                 proj_dir=opt.proj_dir, 
                 output_dir=opt.output_dir, 
@@ -92,12 +97,16 @@ def main(opt):
             df_test1=df_test1,
             df_test2=df_test2)
         if opt.get_stat:
-            roc_stat = get_roc(
+            cm_all(
+                proj_dir=opt.proj_dir,
+                output_dir=opt.output_dir,
+                data_type='exvivo')
+            roc_stat = roc_all(
                 proj_dir=opt.proj_dir,
                 output_dir=opt.output_dir,
                 bootstrap=opt.bootstrap,
                 data_type='exvivo')
-            prc_stat = get_prc(
+            prc_stat = prc_all(
                 proj_dir=opt.proj_dir,
                 output_dir=opt.output_dir,
                 data_type='exvivo')

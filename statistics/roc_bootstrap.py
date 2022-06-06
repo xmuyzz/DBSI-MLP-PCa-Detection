@@ -1,7 +1,3 @@
-#--------------------------------------------
-# calculate auc, tpr, tnr with n bootstrap
-#-------------------------------------------
-
 import os
 import numpy as np
 import pandas as pd
@@ -37,9 +33,7 @@ def roc_bootstrap(bootstrap, y_true, y_pred):
     THRE = []
     TNR  = []
     TPR  = []
-
     for j in range(bootstrap):
-        
         index = range(len(y_pred))
         indices = resample(index, replace=True, n_samples=int(len(y_pred)))
         fpr, tpr, thre = roc_curve(y_true[indices], y_pred[indices])
@@ -50,34 +44,29 @@ def roc_bootstrap(bootstrap, y_true, y_pred):
              'tnr' : pd.Series(1 - fpr, index=q),
              'tf'  : pd.Series(tpr - (1 - fpr), index=q),
              'thre': pd.Series(thre, index=q)}
-             )
-        
+             )        
         ### calculate optimal TPR, TNR under uden index
         roc_opt = roc.loc[(roc['tpr'] - roc['fpr']).idxmax(),:]
         AUC.append(roc_auc_score(y_true[indices], y_pred[indices]))
         TPR.append(roc_opt['tpr'])
         TNR.append(roc_opt['tnr'])
         THRE.append(roc_opt['thre'])
-    
     ### calculate mean and 95% CI
     AUCs = mean_CI(AUC)
     TPRs = mean_CI(TPR)
     TNRs = mean_CI(TNR)
     THREs = mean_CI(THRE)
-
-    AUCs  = np.around(AUCs, 3)
-    TPRs  = np.around(TPRs, 3)
-    TNRs  = np.around(TNRs, 3)
+    AUCs = np.around(AUCs, 3)
+    TPRs = np.around(TPRs, 3)
+    TNRs = np.around(TNRs, 3)
     THREs = np.around(THREs, 3)
     #print(AUCs)
-    
     # save results into dataframe
     stat_roc = pd.DataFrame(
         [AUCs, TPRs, TNRs, THREs],
         columns=['mean', '95% CI -', '95% CI +'],
         index=['AUC', 'TPR', 'TNR', 'THRE']
         )
-    
     print(stat_roc)
 
     return stat_roc

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 from time import gmtime, strftime
+from sklearn.metrics import classification_report
 
 
 
@@ -36,6 +37,9 @@ def train(model, x_train, y_train, x_val, y_val, x_test, y_test,
     acc = np.around(score[1], 3)
     print('acc:', acc)
     print('loss:', loss)
+    # classification report
+    #report = classification_report(y_test, y_pred_class, digits=3)
+    #print(report)
 
     # save model
     model.save(os.path.join(pro_data_dir, 'invivo_model.h5'))
@@ -70,6 +74,15 @@ def train(model, x_train, y_train, x_val, y_val, x_test, y_test,
     test_pat_pred = df_mean[['Sub_ID', 'y_test', 'y_pred', 'y_pred_class']]
     print(df_mean)
     test_pat_pred.to_csv(os.path.join(pro_data_dir, 'invivo_pat_pred.csv'))
-    print('successfully save test patient prediction!')
+
+    # classification report
+    #report = classification_report(label_pat, pred_class_pat, digits=3)
+    #print(report)
+
+
+
+
+
+
 
 

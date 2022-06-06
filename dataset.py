@@ -46,7 +46,7 @@ def get_data_invivo(proj_dir, benign_bix, benign_nobix, pca_bix, exclude_patient
     dfs = []
     for data in [benign_nobix, benign_bix, pca_bix]:
         df = pd.read_csv(os.path.join(data_dir, data))
-        df['ROI_Class'].replace(['p', 'c', 't'], [0, 2, 1], inplace=True)
+        df['ROI_Class'].replace(['p', 'c', 't'], [0, 0, 1], inplace=True)
         df.fillna(0, inplace=True)
         # only include class 0 and class 1
         df = df[df['ROI_Class'].isin([0, 1])]
@@ -146,7 +146,7 @@ def get_data_exvivo(proj_dir, exvivo_data, x_input, exclude_patient=None):
     data_dir = os.path.join(proj_dir, 'data')
     df = pd.read_csv(os.path.join(data_dir, exvivo_data))
     df['ID'] = df['Sub_ID'] + df['ROI_Class']
-    df['ROI_Class'].replace(['BPZ', 'BPH', 'SBPH', 'PCa'], [0, 0, 0, 1], inplace=True)
+    df['ROI_Class'].replace(['BPZ', 'BPH', 'SBPH', 'PCa'], [2, 2, 0, 1], inplace=True)
     df.fillna(0, inplace=True)
     ## only include class 0 and class 1
     df = df[df['ROI_Class'].isin([0, 1])]
@@ -221,6 +221,7 @@ def get_data_exvivo(proj_dir, exvivo_data, x_input, exclude_patient=None):
     y_train = df_train['ROI_Class'].astype('int')
     x_test = df_test.iloc[:, x_input]
     y_test = df_test['ROI_Class'].astype('int')
+
 
     ## oversample
     resample = SMOTE(random_state=42)

@@ -1,7 +1,3 @@
-#----------------------------------------------------------------------
-# Deep learning for classification for contrast CT;
-# Transfer learning using Google Inception V3;
-#-----------------------------------------------------------------------------------------
 import os
 import numpy as np
 import pandas as pd
@@ -12,17 +8,20 @@ from sklearn.metrics import auc, roc_auc_score
 from sklearn.metrics import precision_recall_curve
 
 
-# ----------------------------------------------------------------------------------
-# precision recall curve
-# ----------------------------------------------------------------------------------
+
 def plot_prc(save_dir, y_true, y_pred, level, color, data_type):
 
-    precision = dict()
-    recall    = dict()
-    threshold = dict()
-    prc_auc   = []
+    precision = []
+    recall = []
+    threshold = []
+    prc_auc = []
 
     precision, recall, threshold = precision_recall_curve(y_true, y_pred) 
+    # get best F1-score
+    f1 = (2 * precision * recall) / (precision + recall)
+    best_f1 = np.max(f1)
+    print('best f1-score:', best_f1)
+    # get precision-recall AUC
     RP_2D = np.array([recall, precision])
     RP_2D = RP_2D[np.argsort(RP_2D[:, 0])]
     #prc_auc.append(auc(RP_2D[1], RP_2D[0]))
@@ -31,7 +30,14 @@ def plot_prc(save_dir, y_true, y_pred, level, color, data_type):
 	#print('PRC AUC:', prc_auc)   
     #prc_auc = auc(precision, recall)
     #prc_auc = 1
-
+    
+    # calculate F1-score
+    f1s = []
+    for pre, rec in zip(precision, recall):
+        f1 = (2 * pre * rec) / (pre + rec)
+        f1s.append(f1)
+    best_f1 = np.max(f1s)
+    print('best f1-score:', best_f1)                     
     fn = 'prc' + '_' + str(data_type) + '_' + str(level) + '.png'   
     fig = plt.figure()
     ax  = fig.add_subplot(1, 1, 1)

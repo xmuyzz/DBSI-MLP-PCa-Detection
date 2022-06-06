@@ -28,7 +28,7 @@ def parse_opts():
     parser.add_argument('--n_neurons', default=100, type=int, help='number of neurons per layer')
     parser.add_argument('--batch_size', default=256, type=int, help='Batch size')
     parser.add_argument('--lr', default=1e-5, type=float, help='learning rate')
-    parser.add_argument('--train_epoch', default=5, type=int, help='train epoch')
+    parser.add_argument('--train_epoch', default=20, type=int, help='train epoch')
     parser.add_argument('--activation', default='elu', type=str, help='(relu|elu|leaky_relu)')
     parser.add_argument('--output_activation', default='softmax', type=str, help='Output activation function')
     parser.add_argument('--loss_function', default='sparse_categorical_crossentropy', type=str, help='loss function')
@@ -41,7 +41,7 @@ def parse_opts():
     parser.add_argument('--bootstrap', default=1000, type=int, help='bootstrap to calcualte 95% CI of AUC')
 
     # finetune model                        
-    parser.add_argument('--freeze_layer', default=15, type=int, help='freeze layer to fine tune model')
+    parser.add_argument('--freeze_layer', default=None, type=int, help='freeze layer to fine tune model')
     parser.add_argument('--saved_model', default='invivo_model.h5', type=str, help='saved model name')
     parser.add_argument('--finetune_epoch', default=20, type=int, help='fine tune epoch')
 
