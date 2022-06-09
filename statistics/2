@@ -45,6 +45,6 @@ def prc_all(proj_dir, output_dir, data_type):
             level=level, 
             color='red',
             data_type=data_type)
-        #print(level, prc_auc)
+        print(level, prc_auc)
 
     return prc_auc

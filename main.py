@@ -27,7 +27,8 @@ def main(opt):
             benign_nobix=opt.benign_nobix,
             pca_bix=opt.pca_bix,
             exclude_patient=opt.exclude_patient,
-            x_input=opt.x_input)
+            x_input=opt.x_input,
+            invivo_tissue_type=opt.invivo_tissue_type)
         model = generate_model(
             init=opt.init,
             dropout_rate=opt.dropout_rate,
@@ -72,7 +73,8 @@ def main(opt):
         x_test2, y_test2, df_test1, df_test2 = get_data_exvivo(
             proj_dir=opt.proj_dir,
             exvivo_data=opt.exvivo_data,
-            x_input=opt.x_input)
+            x_input=opt.x_input,
+            exvivo_tissue_type=opt.exvivo_tissue_type)
         # fine tune invivo model
         tuned_model = finetune_exvivo(
             x_train=x_train,

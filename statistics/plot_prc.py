@@ -15,12 +15,15 @@ def plot_prc(save_dir, y_true, y_pred, level, color, data_type):
     recall = []
     threshold = []
     prc_auc = []
-
     precision, recall, threshold = precision_recall_curve(y_true, y_pred) 
+    
     # get best F1-score
     f1 = (2 * precision * recall) / (precision + recall)
-    best_f1 = np.max(f1)
+    f1 = [x for x in f1 if str(x) != 'nan']
+    best_f1 = np.around(np.max(f1), 3)
     print('best f1-score:', best_f1)
+    #print(f1)
+    
     # get precision-recall AUC
     RP_2D = np.array([recall, precision])
     RP_2D = RP_2D[np.argsort(RP_2D[:, 0])]
@@ -32,12 +35,12 @@ def plot_prc(save_dir, y_true, y_pred, level, color, data_type):
     #prc_auc = 1
     
     # calculate F1-score
-    f1s = []
-    for pre, rec in zip(precision, recall):
-        f1 = (2 * pre * rec) / (pre + rec)
-        f1s.append(f1)
-    best_f1 = np.max(f1s)
-    print('best f1-score:', best_f1)                     
+    #f1s = []
+    #for pre, rec in zip(precision, recall):
+    #    f1 = (2 * pre * rec) / (pre + rec)
+    #    f1s.append(f1)
+    #best_f1 = np.max(f1s)
+    #print('best f1-score:', best_f1)                     
     fn = 'prc' + '_' + str(data_type) + '_' + str(level) + '.png'   
     fig = plt.figure()
     ax  = fig.add_subplot(1, 1, 1)

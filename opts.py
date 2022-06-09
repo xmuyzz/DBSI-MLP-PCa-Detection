@@ -12,14 +12,16 @@ def parse_opts():
     parser.add_argument('--model', default='output/model', type=str, help='Results output path')
     parser.add_argument('--log', default='output/log', type=str, help='Log data path')
     
-    # data preprocessing
+    # load data
     parser.add_argument('--benign_nobix', default='benign_no_biopsy.csv', type=str, help='data csv')
     parser.add_argument('--benign_bix', default='benign_biopsy.csv', type=str, help='data csv')
     parser.add_argument('--pca_bix', default='pca_biopsy.csv', type=str, help='data csv')
     parser.add_argument('--exclude_patient', default=['001_ZHOU_CHAO_GANG', '002_ZHU_XIN_GEN', '007_SHEN_QIU_YU',
                         '016_LIU_FENG_MEI', '028_XUE_LUO_PING'], type=list, help='exclude list')
     parser.add_argument('--exvivo_data', default='pca_exvivo.csv', type=str, help='data csv')
-    
+    parser.add_argument('--invivo_tissue_type', default='benign', type=str, help='(benign|BPZ|BTZ)')
+    parser.add_argument('--exvivo_tissue_type', default='BPH', type=str, help='(benign|BPZ|BPH|SBPH)')
+
     # train model
     parser.add_argument('--data_type', default='exvivo', type=str, help='(invivo|exvivo')
     parser.add_argument('--x_input', default=range(12, 30), type=list, help='input image metrics')
