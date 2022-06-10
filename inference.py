@@ -1,5 +1,4 @@
-
-mport os
+import os
 import numpy as np
 import pandas as pd
 import nibabel as nib

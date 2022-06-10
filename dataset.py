@@ -261,6 +261,85 @@ def get_data_exvivo(proj_dir, exvivo_data, x_input, exvivo_tissue_type, exclude_
 
 
 
+def grading_data(data_dir, x_input):
+    
+    """
+    maps_list = [
+                 'b0_map.nii',                       #07
+                 'dti_adc_map.nii',                  #08
+                 'dti_axial_map.nii',                #09
+                 'dti_fa_map.nii',                   #10
+                 'dti_radial_map.nii',               #11
+                 'fiber_ratio_map.nii',              #12
+                 'fiber1_axial_map.nii',             #13
+                 'fiber1_fa_map.nii',                #14
+                 'fiber1_fiber_ratio_map.nii',       #15
+                 'fiber1_radial_map.nii',            #16
+                 'fiber2_axial_map.nii',             #17
+                 'fiber2_fa_map.nii',                #18
+                 'fiber2_fiber_ratio_map.nii',       #19
+                 'fiber2_radial_map.nii',            #20
+                 'hindered_ratio_map.nii',           #21
+                 'hindered_adc_map.nii',             #22
+                 'iso_adc_map.nii',                  #23
+                 'restricted_adc_1_map.nii',         #24
+                 'restricted_adc_2_map.nii',         #25
+                 'restricted_ratio_1_map.nii',       #26
+                 'restricted_ratio_2_map.nii',       #27
+                 'water_adc_map.nii',                #28
+                 'water_ratio_map.nii',              #29
+                ]
+    """
+
+    files = glob.glob(self.project_dir + "/*.xlsx")
+    df = pd.DataFrame()
+    for f in files:
+        data = pd.read_excel(f, 'Sheet1', header=None)
+        data.iloc[:, 1:] = (data.iloc[:, 1:])/(data.iloc[:, 1:].max())
+        data = data.iloc[data[data.iloc[:, 0] != 0].index]
+        df = df.append(data)
+    df = self.data_loading()
+    df.loc[df.iloc[:, 0] == 1, 'y_cat'] = 0
+    df.loc[df.iloc[:, 0] == 2, 'y_cat'] = 1
+    df.loc[df.iloc[:, 0] == 3, 'y_cat'] = 2
+    df.loc[df.iloc[:, 0] == 4, 'y_cat'] = 3
+    df.loc[df.iloc[:, 0] == 5, 'y_cat'] = 4
+
+    class1        = df[df['y_cat'] == 0]
+    class1_sample = class1.sample(int(class1.shape[0]*self.ratio_1))
+    
+    class2        = df[df['y_cat'] == 1]
+    class2_sample = class2.sample(int(class2.shape[0]*self.ratio_2))
+    
+    class3        = df[df['y_cat'] == 2]
+    class3_sample = class3.sample(int(class3.shape[0]*self.ratio_3))
+    
+    class4        = df[df['y_cat'] == 3]
+    class4_sample = class4.sample(int(class4.shape[0]*self.ratio_4))
+    
+    class5        = df[df['y_cat'] == 4]
+    class5_sample = class5.sample(int(class5.shape[0]*self.ratio_5))
+
+    df_2 = pd.concat([
+                      class1_sample,
+                      class2_sample,
+                      class3_sample,
+                      class4_sample,
+                      class5_sample
+                      ])
+    
+    df_2 = self.data_balancing()
+    X = df_2.iloc[:, self.x_input]
+    Y = df_2.y_cat.astype('int')
+    x_train, x_test_1, y_train, y_test_1 = train_test_split(
+        X, Y, test_size=0.3, random_state=1234)
+    x_val, x_test, y_val, y_test = train_test_split(
+        x_test_1, y_test_1, test_size=0.3, random_state=1234)
+
+    return x_train, x_val, x_test, y_train, y_val, y_test
+
+
+
 
 
 
