@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+
 def plot_cm(cm0, cm_type, level, save_dir):
     
     if cm_type == 'norm':
@@ -11,15 +12,14 @@ def plot_cm(cm0, cm_type, level, save_dir):
         fmt = 'd'   
 
     ax = sn.heatmap(
-                    cm0,
-                    annot=True,
-                    cbar=True,
-                    cbar_kws={'ticks': [-0.1]},
-                    annot_kws={'size': 26, 'fontweight': 'bold'},
-                    cmap='Blues',
-                    fmt=fmt,
-                    linewidths=0.5
-                    )
+        cm0,
+        annot=True,
+        cbar=True,
+        cbar_kws={'ticks': [-0.1]},
+        annot_kws={'size': 26, 'fontweight': 'bold'},
+        cmap='Blues',
+        fmt=fmt,
+        linewidths=0.5)
 
     ax.axhline(y=0, color='k', linewidth=4)
     ax.axhline(y=2, color='k', linewidth=4)
@@ -35,8 +35,7 @@ def plot_cm(cm0, cm_type, level, save_dir):
     
     fn = 'cm' + '_' + str(cm_type) + '_' + str(level) + '.png'
     plt.savefig(
-                os.path.join(save_dir, fn),
-                format='png',
-                dpi=600
-                )
+        os.path.join(save_dir, fn),
+        format='png',
+        dpi=600)
     plt.close()

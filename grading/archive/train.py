@@ -31,7 +31,7 @@ from sklearn.metrics import roc_auc_score
 
 
 
-def grading_model(x_train, y_train, proj_dir, saved_model, batch_size, epoch, freeze_layer):
+def train(x_train, y_train, proj_dir, saved_model, batch_size, epoch, freeze_layer):
 
     """
     finetune a CNN model
@@ -47,31 +47,17 @@ def grading_model(x_train, y_train, proj_dir, saved_model, batch_size, epoch, fr
 
     ## fine tune model
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
-    base_model = load_model(os.path.join(pro_data_dir, saved_model))
-   
-    base_model.trainable = False
-    inputs = Input(shape=input_shape)
-    x = base_model(inputs, training=False)
-    x = Dropout(0.3)(x)
-    x = Dense(256, activation='relu')(x)
-    x = Dropout(0.3)(x)
-    outputs = Dense(5, activation='softmax')(x)
-    model = Model(inputs=inputs, outputs=outputs)
-    
-    if lock_base_model:
-        base_model.trainable = False
-    else:
-        base_model.trainable = True
-        for layer in model.layers[0:16]:
+    model = load_model(os.path.join(pro_data_dir, saved_model))
+    ### freeze specific number of layers
+    if freeze_layer != None:
+        for layer in model.layers[0:freeze_layer]:
             layer.trainable = False
         for layer in model.layers:
             print(layer, layer.trainable)
-
-    elif tune_step == 'fine_tune':
-        model = load_model(os.path.join(model_dir, saved_model))
+    else:
         for layer in model.layers:
             layer.trainable = True
-    model.summary()
+    #model.summary()
 
     ## fit data into dnn models
     history = model.fit(
@@ -94,7 +80,71 @@ def grading_model(x_train, y_train, proj_dir, saved_model, batch_size, epoch, fr
     tuned_model = model
     print('fine tuning model complete!!')
     print('saved fine-tuned model as:', model_fn)
+    y_pred = model.predict(x_test)
+    y_pred_class = np.argmax(y_pred, axis=1)
+    score = model.evaluate(x_test, y_test, verbose=0)
+    loss = np.around(score[0], 3)
+    acc = np.around(score[1], 3)
+    print('acc:', acc)
+    print('loss:', loss)
+    # classification report
+    #report = classification_report(y_test, y_pred_class, digits=3)
+    #print(report)
 
+    # save model
+    model.save(os.path.join(pro_data_dir, 'invivo_model.h5'))
+
+    # save a df for test and prediction
+    df_test['y_pred'] = y_pred[:, 1]
+    df_test['y_pred_class'] = y_pred_class
+    df_test.rename(columns={'ROI_Class': 'y_test'}, inplace=True)
+    test_voxel_pred = df_test[['Sub_ID', 'y_test', 'y_pred', 'y_pred_class']]
+    test_voxel_pred.to_csv(os.path.join(pro_data_dir, 'invivo_voxel_pred.csv'))
+    print('successfully save test voxel prediction!')
+
+        cm = confusion_matrix(label, pred)
+        cm_norm = cm.astype('float64') / cm.sum(axis=1)[:, np.newaxis]
+        cm_norm = np.around(cm_norm, 2)
+        # classification report
+        report = classification_report(label, pred, digits=3)
+        print(level)
+        print(cm)
+        print(cm_norm)
+        print(report)
+
+    if cm_type == 'norm':
+        fmt = ''
+    elif cm_type == 'raw':
+        fmt = 'd'
+
+    ax = sn.heatmap(
+        cm0,
+        annot=True,
+        cbar=True,
+        cbar_kws={'ticks': [-0.1]},
+        annot_kws={'size': 26, 'fontweight': 'bold'},
+        cmap='Blues',
+        fmt=fmt,
+        linewidths=0.5)
+
+    ax.axhline(y=0, color='k', linewidth=4)
+    ax.axhline(y=2, color='k', linewidth=4)
+    ax.axvline(x=0, color='k', linewidth=4)
+    ax.axvline(x=2, color='k', linewidth=4)
+
+    ax.tick_params(direction='out', length=4, width=2, colors='k')
+    ax.xaxis.set_ticks_position('top')
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.set_aspect('equal')
+    plt.tight_layout()
+
+    fn = 'cm' + '_' + str(cm_type) + '_' + str(level) + '.png'
+    plt.savefig(
+        os.path.join(save_dir, fn),
+        format='png',
+        dpi=600)
+    plt.close()
     return tuned_model
 
 
